@@ -3,6 +3,7 @@ import $ from "jquery";
 
 import * as blueslip from "./blueslip";
 import {$t} from "./i18n";
+import {get_currently_focused_message_id} from "./message_edit";
 import {MessageListData} from "./message_list_data";
 import {MessageListView} from "./message_list_view";
 import * as narrow_banner from "./narrow_banner";
@@ -354,6 +355,9 @@ export class MessageList {
 
     rerender_view() {
         this.view.rerender_preserving_scrolltop();
+        const focused_id = get_currently_focused_message_id();
+        const focused_box = $(`#message_edit_content_${focused_id}`);
+        focused_box.trigger("focus");
         this.redo_selection();
     }
 

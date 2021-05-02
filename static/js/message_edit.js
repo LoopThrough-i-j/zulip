@@ -30,6 +30,7 @@ const currently_editing_messages = new Map();
 let currently_deleting_messages = [];
 let currently_topic_editing_messages = [];
 const currently_echoing_messages = new Map();
+let currently_focused_message_id;
 
 // These variables are designed to preserve the user's most recent
 // choices when editing a group of messages, to make it convenient to
@@ -225,6 +226,10 @@ export function end_if_focused_on_inline_topic_edit() {
     }
 }
 
+export function get_currently_focused_message_id() {
+    return currently_focused_message_id;
+}
+
 export function end_if_focused_on_message_row_edit() {
     const focused_elem = $(".message_edit").find(":focus");
     if (focused_elem.length === 1) {
@@ -377,6 +382,23 @@ function edit_message(row, raw_content) {
 
     const edit_obj = {form, raw_content};
     currently_editing_messages.set(message.id, edit_obj);
+    currently_focused_message_id = message.id;
+    const message_area = edit_obj.form.find(".message_edit_content");
+
+    $(message_area).on("focus", (event) => {
+        currently_focused_message_id = $(event.target)
+            .closest("form")
+            .attr("id")
+            .slice("edit_form_".length);
+    });
+
+    $(document).on("click", (event) => {
+        const box_id = $(event.target).closest("form").attr("id") || "";
+        if (!box_id.startsWith("edit_form")) {
+            currently_focused_message_id = undefined;
+        }
+    });
+
     message_lists.current.show_edit_message(row, edit_obj);
 
     form.on("keydown", handle_message_row_edit_keydown);
@@ -617,6 +639,9 @@ export function end_message_row_edit(row) {
         }
 
         currently_editing_messages.delete(message.id);
+        if (currently_focused_message_id === message.id) {
+            currently_focused_message_id = undefined;
+        }
         message_lists.current.hide_edit_message(row);
 
         compose.abort_video_callbacks(message.id);
